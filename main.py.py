@@ -1,23 +1,31 @@
-def hitung_zakat(jumlah_anggota, metode_pembayaran):
-    zakat_beras_per_jiwa = 2.5  # kg
-    zakat_uang_per_jiwa = 45000  # IDR (misalnya Rp 45.000 per jiwa)
-    
-    if metode_pembayaran.lower() == "beras":
-        total_zakat = jumlah_anggota * zakat_beras_per_jiwa
-        return f"Total zakat yang harus dibayar: {total_zakat} kg beras"
-    elif metode_pembayaran.lower() == "uang":
-        total_zakat = jumlah_anggota * zakat_uang_per_jiwa
-        return f"Total zakat yang harus dibayar: Rp {total_zakat:,}"
-    else:
-        return "Metode pembayaran tidak valid. Silakan pilih 'beras' atau 'uang'."
 
-if __name__ == "__main__":
-    print("=== Program Pembayaran Zakat Fitrah ===")
+
+def tampilkan_harga_beras():
+    print(f"Harga beras saat ini: Rp {zakat_uang_per_jiwa:,} per jiwa")
+
+def input_harga_beras():
+    global zakat_uang_per_jiwa
+    try:
+        zakat_uang_per_jiwa = int(input("Masukkan harga beras per jiwa (dalam Rupiah): "))
+        print("Harga beras berhasil diperbarui!")
+    except ValueError:
+        print("Harap masukkan angka yang valid.")
+
+def tampilkan_data_zakat():
+    print("Data Zakat belum tersedia.")
+
+def pembayaran_zakat():
     try:
         jumlah_anggota = int(input("Masukkan jumlah anggota keluarga: "))
         metode_pembayaran = input("Pilih metode pembayaran (beras/uang): ")
-        hasil = hitung_zakat(jumlah_anggota, metode_pembayaran)
-        print(hasil)
+        if metode_pembayaran.lower() == "beras":
+            total_zakat = jumlah_anggota * 2.5
+            print(f"Total zakat yang harus dibayar: {total_zakat} kg beras")
+        elif metode_pembayaran.lower() == "uang":
+            total_zakat = jumlah_anggota * zakat_uang_per_jiwa
+            print(f"Total zakat yang harus dibayar: Rp {total_zakat:,}")
+        else:
+            print("Metode pembayaran tidak valid. Silakan pilih 'beras' atau 'uang'.")
     except ValueError:
         print("Harap masukkan angka yang valid untuk jumlah anggota keluarga.")
 
@@ -56,5 +64,5 @@ def main():
             print("Pilihan tidak valid, silakan coba lagi.")
 
 if __name__ == "__main__":
-    zakat_uang_per_jiwa = 45000  # Harga default
+    zakat_uang_per_jiwa = 45000
     main()
