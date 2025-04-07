@@ -66,3 +66,6 @@ def main():
 if __name__ == "__main__":
     zakat_uang_per_jiwa = 45000
     main()
+    import mysql.connector
+import pandas as pd
+
