@@ -33,3 +33,14 @@ def update_zakat(id, nama, jenis_zakat, jumlah, tanggal):
     conn.commit()
     cursor.close()
     conn.close()
+# Fungsi untuk menghapus data zakat
+def delete_zakat(id):
+    conn = create_connection()
+    cursor = conn.cursor()
+    
+    query = "DELETE FROM zakat_data WHERE id = %s"
+    cursor.execute(query, (id,))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
