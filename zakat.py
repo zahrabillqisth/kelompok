@@ -55,3 +55,17 @@ def add_beras(nama_beras, harga_per_kg):
     conn.commit()
     cursor.close()
     conn.close()
+# Fungsi untuk menampilkan data master beras
+def view_master_beras():
+    conn = create_connection()
+    cursor = conn.cursor()
+    
+    query = "SELECT * FROM master_beras"
+    cursor.execute(query)
+    result = cursor.fetchall()
+    
+    for row in result:
+        print(f"ID: {row[0]}, Nama Beras: {row[1]}, Harga per Kg: {row[2]}")
+    
+    cursor.close()
+    conn.close()
