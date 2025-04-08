@@ -1,71 +1,236 @@
+import mysql.connector
+import pandas as pd
 
+def create_connection():
+    return mysql.connector.connect(
+        host="localhost",      
+        user="root",        
+        password="",   
+        database="zakat" 
+    )
 
-def tampilkan_harga_beras():
-    print(f"Harga beras saat ini: Rp {zakat_uang_per_jiwa:,} per jiwa")
+def add_zakat(nama, jenis_zakat, jumlah, tanggal):
+    conn = create_connection()
+    cursor = conn.cursor()
+    
+    query = "INSERT INTO zakat_data (nama, jenis_zakat, jumlah, tanggal) VALUES (%s, %s, %s, %s)"
+    cursor.execute(query, (nama, jenis_zakat, jumlah, tanggal))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
 
-def input_harga_beras():
-    global zakat_uang_per_jiwa
-    try:
-        zakat_uang_per_jiwa = int(input("Masukkan harga beras per jiwa (dalam Rupiah): "))
-        print("Harga beras berhasil diperbarui!")
-    except ValueError:
-        print("Harap masukkan angka yang valid.")
+def update_zakat(id, nama, jenis_zakat, jumlah, tanggal):
+    conn = create_connection()
+    cursor = conn.cursor()
+    
+    query = """UPDATE zakat_data 
+               SET nama = %s, jenis_zakat = %s, jumlah = %s, tanggal = %s 
+               WHERE id = %s"""
+    cursor.execute(query, (nama, jenis_zakat, jumlah, tanggal, id))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
 
-def tampilkan_data_zakat():
-    print("Data Zakat belum tersedia.")
+def delete_zakat(id):
+    conn = create_connection()
+    cursor = conn.cursor()
+    
+    query = "DELETE FROM zakat_data WHERE id = %s"
+    cursor.execute(query, (id,))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
 
-def pembayaran_zakat():
-    try:
-        jumlah_anggota = int(input("Masukkan jumlah anggota keluarga: "))
-        metode_pembayaran = input("Pilih metode pembayaran (beras/uang): ")
-        if metode_pembayaran.lower() == "beras":
-            total_zakat = jumlah_anggota * 2.5
-            print(f"Total zakat yang harus dibayar: {total_zakat} kg beras")
-        elif metode_pembayaran.lower() == "uang":
-            total_zakat = jumlah_anggota * zakat_uang_per_jiwa
-            print(f"Total zakat yang harus dibayar: Rp {total_zakat:,}")
-        else:
-            print("Metode pembayaran tidak valid. Silakan pilih 'beras' atau 'uang'.")
-    except ValueError:
-        print("Harap masukkan angka yang valid untuk jumlah anggota keluarga.")
+def add_beras(nama_beras, harga_per_kg):
+    conn = create_connection()
+    cursor = conn.cursor()
+    
+    query = "INSERT INTO master_beras (nama_beras, harga_per_kg) VALUES (%s, %s)"
+    cursor.execute(query, (nama_beras, harga_per_kg))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
 
-def export_excel():
-    data = {"Nama": ["Ahmad", "Budi", "Siti"], "Zakat (Rp)": [45000, 90000, 135000]}
-    df = pd.DataFrame(data)
-    df.to_excel("data_zakat.xlsx", index=False)
-    print("Data zakat berhasil diekspor ke data_zakat.xlsx")
+def view_master_beras():
+    conn = create_connection()
+    cursor = conn.cursor()
+    
+    query = "SELECT * FROM master_beras"
+    cursor.execute(query)
+    result = cursor.fetchall()
+    
+    for row in result:
+        print(f"ID: {row[0]}, Nama Beras: {row[1]}, Harga per Kg: {row[2]}")
+    
+    cursor.close()
+    conn.close()
+
+def add_transaksi_zakat(id_zakat, id_beras, jumlah_beras, tanggal):
+    conn = create_connection()
+    cursor = conn.cursor()
+    
+    query_beras = "SELECT harga_per_kg FROM master_beras WHERE id = %s"
+    cursor.execute(query_beras, (id_beras,))
+    harga_per_kg = cursor.fetchone()[0]
+    
+    total_harga = harga_per_kg * jumlah_beras
+    
+    query = """INSERT INTO transaksi_zakat (id_zakat, id_beras, jumlah_beras, total_harga, tanggal) 
+               VALUES (%s, %s, %s, %s, %s)"""
+    cursor.execute(query, (id_zakat, id_beras, jumlah_beras, total_harga, tanggal))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def view_transaksi_zakat():
+    conn = create_connection()
+    cursor = conn.cursor()
+    
+    query = """SELECT tz.id, z.nama, z.jenis_zakat, m.nama_beras, tz.jumlah_beras, tz.total_harga, tz.tanggal
+               FROM transaksi_zakat tz
+               JOIN zakat_data z ON tz.id_zakat = z.id
+               JOIN master_beras m ON tz.id_beras = m.id"""
+    cursor.execute(query)
+    result = cursor.fetchall()
+    
+    for row in result:
+        print(f"ID Transaksi: {row[0]}, Nama Zakat: {row[1]}, Jenis Zakat: {row[2]}, Nama Beras: {row[3]}, "
+              f"Jumlah Beras: {row[4]}, Total Harga: {row[5]}, Tanggal: {row[6]}")
+    
+    cursor.close()
+    conn.close()
+
+def export_to_excel():
+    conn = create_connection()
+    query = "SELECT * FROM zakat_data"
+    
+    zakat_data = pd.read_sql(query, conn)
+    
+    zakat_data.to_excel("data_zakat.xlsx", index=False)
+    
+    conn.close()
+    print("Data zakat berhasil diekspor ke dalam file 'data_zakat.xlsx'")
 
 def main():
     while True:
         print("\nMenu:")
-        print("1. Tampilkan Harga Beras")
-        print("2. Input Harga Beras")
-        print("3. Tampilkan Data Zakat")
-        print("4. Pembayaran Zakat")
-        print("5. Export Excel")
-        print("6. Keluar")
+        print("1. Tambah Data Zakat")
+        print("2. Edit Data Zakat")
+        print("3. Hapus Data Zakat")
+        print("4. Lihat Data Master Beras")
+        print("5. Tambah Transaksi Zakat")
+        print("6. Lihat Transaksi Zakat")
+        print("7. Ekspor Data Zakat ke Excel")
+        print("8. Tambah Data Master Beras")
+        print("9. Keluar")
         
-        pilihan = input("Pilih menu (1/2/3/4/5/6): ")
+        choice = input("Pilih opsi (1-8): ")
         
-        if pilihan == "1":
-            tampilkan_harga_beras()
-        elif pilihan == "2":
-            input_harga_beras()
-        elif pilihan == "3":
-            tampilkan_data_zakat()
-        elif pilihan == "4":
-            pembayaran_zakat()
-        elif pilihan == "5":
-            export_excel()
-        elif pilihan == "6":
-            print("Terima kasih telah menggunakan program ini.")
+        if choice == "1":
+            nama = input("Masukkan nama: ")
+            jenis_zakat = input("Masukkan jenis zakat: ")
+            jumlah = float(input("Masukkan jumlah zakat: "))
+            tanggal = input("Masukkan tanggal (YYYY-MM-DD): ")
+            add_zakat(nama, jenis_zakat, jumlah, tanggal)
+            print("Data zakat berhasil ditambahkan.")
+        
+        elif choice == "2":
+            id_zakat = int(input("Masukkan ID zakat yang ingin diubah: "))
+            nama = input("Masukkan nama baru: ")
+            jenis_zakat = input("Masukkan jenis zakat baru: ")
+            jumlah = float(input("Masukkan jumlah zakat baru: "))
+            tanggal = input("Masukkan tanggal baru (YYYY-MM-DD): ")
+            update_zakat(id_zakat, nama, jenis_zakat, jumlah, tanggal)
+            print("Data zakat berhasil diperbarui.")
+        
+        elif choice == "3":
+            id_zakat = int(input("Masukkan ID zakat yang ingin dihapus: "))
+            delete_zakat(id_zakat)
+            print("Data zakat berhasil dihapus.")
+        
+        elif choice == "4":
+            print("Master Data Beras:")
+            view_master_beras()
+        
+        elif choice == "5":
+            id_zakat = int(input("Masukkan ID zakat: "))
+            id_beras = int(input("Masukkan ID beras: "))
+            jumlah_beras = int(input("Masukkan jumlah beras (kg): "))
+            tanggal = input("Masukkan tanggal (YYYY-MM-DD): ")
+            add_transaksi_zakat(id_zakat, id_beras, jumlah_beras, tanggal)
+            print("Transaksi zakat berhasil ditambahkan.")
+        
+        elif choice == "6":
+            print("Transaksi Zakat:")
+            view_transaksi_zakat()
+        
+        elif choice == "7":
+            export_to_excel()
+
+        elif choice == "8":
+            nama_beras = input("Masukkan nama beras: ")
+            harga_per_kg = float(input("Masukkan harga per kg: "))
+            add_beras(nama_beras, harga_per_kg)
+            print("Data beras berhasil ditambahkan.")
+            break
+        
+        elif choice == "9":
+            print("Keluar dari program.")
             break
         else:
-            print("Pilihan tidak valid, silakan coba lagi.")
+            print("Pilihan tidak valid. Silakan coba lagi.")
 
-if __name__ == "__main__":
-    zakat_uang_per_jiwa = 45000
-    main()
-    import mysql.connector
-import pandas as pd
+main()
 
+def add_transaksi_zakat(id_zakat, id_beras, jumlah_beras, tanggal):
+    conn = create_connection()
+    cursor = conn.cursor()
+    
+    query_beras = "SELECT harga_per_kg FROM master_beras WHERE id = %s"
+    cursor.execute(query_beras, (id_beras,))
+    harga_per_kg = cursor.fetchone()[0]
+    
+    total_harga = harga_per_kg * jumlah_beras
+    
+    query = """INSERT INTO transaksi_zakat (id_zakat, id_beras, jumlah_beras, total_harga, tanggal) 
+               VALUES (%s, %s, %s, %s, %s)"""
+    cursor.execute(query, (id_zakat, id_beras, jumlah_beras, total_harga, tanggal))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def view_transaksi_zakat():
+    conn = create_connection()
+    cursor = conn.cursor()
+    
+    query = """SELECT tz.id, z.nama, z.jenis_zakat, m.nama_beras, tz.jumlah_beras, tz.total_harga, tz.tanggal
+               FROM transaksi_zakat tz
+               JOIN zakat_data z ON tz.id_zakat = z.id
+               JOIN master_beras m ON tz.id_beras = m.id"""
+    cursor.execute(query)
+    result = cursor.fetchall()
+    
+    for row in result:
+        print(f"ID Transaksi: {row[0]}, Nama Zakat: {row[1]}, Jenis Zakat: {row[2]}, Nama Beras: {row[3]}, "
+              f"Jumlah Beras: {row[4]}, Total Harga: {row[5]}, Tanggal: {row[6]}")
+    
+    cursor.close()
+    conn.close()
+
+
+def export_to_excel():
+    conn = create_connection()
+    query = "SELECT * FROM zakat_data"
+    
+    zakat_data = pd.read_sql(query, conn)
+    
+    zakat_data.to_excel("data_zakat.xlsx", index=False)
+    
+    conn.close()
+    print("Data zakat berhasil diekspor ke dalam file 'data_zakat.xlsx'")
